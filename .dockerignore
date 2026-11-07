@@ -1,0 +1,6 @@
+venv/
+images/
+docker_output/
+__pycache__/
+.pytest_cache/
+.env

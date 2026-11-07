@@ -1,0 +1,41 @@
+services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    image: queue-app
+    command: uvicorn api:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_HOST: redis
+    volumes:
+      - images-data:/app/images
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: .
+    image: queue-app
+    command: celery -A tasks worker --loglevel=info --concurrency=1
+    environment:
+      REDIS_HOST: redis
+    volumes:
+      - images-data:/app/images
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  redis-data:
+  images-data:
